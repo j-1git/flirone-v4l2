@@ -19,6 +19,6 @@ With this module you will can use it for instance:
 
 Some dependencies needed to compile it (may be more):
 
-* =libc6-dev=;
-* =libusb-1.0-0-dev=;
-* =libjpeg-dev=.
+* `libc6-dev`;
+* `libusb-1.0-0-dev`;
+* `libjpeg-dev`.
