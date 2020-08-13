@@ -97,7 +97,8 @@ int fdwr2 = 0;
  int buf85pointer = 0;
  unsigned char buf85[BUF85SIZE];
   
- void print_format(struct v4l2_format*vid_format) {
+void print_format(struct v4l2_format*vid_format) 
+{
   printf("     vid_format->type                =%d\n",     vid_format->type );
   printf("     vid_format->fmt.pix.width       =%d\n",     vid_format->fmt.pix.width );
   printf("     vid_format->fmt.pix.height      =%d\n",     vid_format->fmt.pix.height );
@@ -117,9 +118,8 @@ void font_write(unsigned char *fb, int x, int y, const char *string)
     for (ry = 0; ry < 5; ++ry) {
       for (rx = 0; rx < 7; ++rx) {
         int v = (font5x7_basic[((*string) & 0x7F) - CHAR_OFFSET][ry] >> (rx)) & 1;
-//	fb[(y+ry) * 160 + (x + rx)] = v ? 0 : 0xFF;                       // black / white
-//	fb[(y+rx) * 160 + (x + ry)] = v ? 0 : 0xFF;                       // black / white
-
+//	    fb[(y+ry) * 160 + (x + rx)] = v ? 0 : 0xFF;                         // black / white
+//	    fb[(y+rx) * 160 + (x + ry)] = v ? 0 : 0xFF;                         // black / white
         fb[(y+rx) * 160 + (x + ry)] = v ? 0 : fb[(y+rx) * 160 + (x + ry)];  // transparent
       }
     }
@@ -143,111 +143,115 @@ double raw2temperature(unsigned short RAW)
 
 void startv4l2()
 {
-     int ret_code = 0;
+  int ret_code = 0;
 
-     int i;
-     int k=1;
-/*     
-//open video_device0
-     printf("using output device: %s\n", video_device0);
-     
-     fdwr0 = open(video_device0, O_RDWR);
-     assert(fdwr0 >= 0);
+  int i;
+  int k=1;
 
-     ret_code = ioctl(fdwr0, VIDIOC_QUERYCAP, &vid_caps0);
-     assert(ret_code != -1);
+  /*
 
-     memset(&vid_format0, 0, sizeof(vid_format0));
+  //open video_device0
+  printf("using output device: %s\n", video_device0);
+  
+  fdwr0 = open(video_device0, O_RDWR);
+  assert(fdwr0 >= 0);
 
-     ret_code = ioctl(fdwr0, VIDIOC_G_FMT, &vid_format0);
+  ret_code = ioctl(fdwr0, VIDIOC_QUERYCAP, &vid_caps0);
+  assert(ret_code != -1);
 
-     linewidth0=FRAME_WIDTH0;
-     framesize0=FRAME_WIDTH0*FRAME_HEIGHT0*1; // 8 Bit
+  memset(&vid_format0, 0, sizeof(vid_format0));
 
-     vid_format0.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-     vid_format0.fmt.pix.width = FRAME_WIDTH0;
-     vid_format0.fmt.pix.height = FRAME_HEIGHT0;
-     vid_format0.fmt.pix.pixelformat = FRAME_FORMAT0;
-     vid_format0.fmt.pix.sizeimage = framesize0;
-     vid_format0.fmt.pix.field = V4L2_FIELD_NONE;
-     vid_format0.fmt.pix.bytesperline = linewidth0;
-     vid_format0.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+  ret_code = ioctl(fdwr0, VIDIOC_G_FMT, &vid_format0);
 
-     // set data format
-     ret_code = ioctl(fdwr0, VIDIOC_S_FMT, &vid_format0);
-     assert(ret_code != -1);
+  linewidth0=FRAME_WIDTH0;
+  framesize0=FRAME_WIDTH0*FRAME_HEIGHT0*1; // 8 Bit
 
-     print_format(&vid_format0);
-*/     
-//open video_device1
-     printf("using output device: %s\n", video_device1);
-     
-     fdwr1 = open(video_device1, O_RDWR);
-     assert(fdwr1 >= 0);
+  vid_format0.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+  vid_format0.fmt.pix.width = FRAME_WIDTH0;
+  vid_format0.fmt.pix.height = FRAME_HEIGHT0;
+  vid_format0.fmt.pix.pixelformat = FRAME_FORMAT0;
+  vid_format0.fmt.pix.sizeimage = framesize0;
+  vid_format0.fmt.pix.field = V4L2_FIELD_NONE;
+  vid_format0.fmt.pix.bytesperline = linewidth0;
+  vid_format0.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
 
-     ret_code = ioctl(fdwr1, VIDIOC_QUERYCAP, &vid_caps1);
-     assert(ret_code != -1);
+  // set data format
+  ret_code = ioctl(fdwr0, VIDIOC_S_FMT, &vid_format0);
+  assert(ret_code != -1);
 
-     memset(&vid_format1, 0, sizeof(vid_format1));
+  print_format(&vid_format0);
 
-     ret_code = ioctl(fdwr1, VIDIOC_G_FMT, &vid_format1);
+  */
 
-     linewidth1=FRAME_WIDTH1;
-     framesize1=FRAME_WIDTH1*FRAME_HEIGHT1*1; // 8 Bit ??
+  //open video_device1
+  printf("using output device: %s\n", video_device1);
+  
+  fdwr1 = open(video_device1, O_RDWR);
+  assert(fdwr1 >= 0);
 
-     vid_format1.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-     vid_format1.fmt.pix.width = FRAME_WIDTH1;
-     vid_format1.fmt.pix.height = FRAME_HEIGHT1;
-     vid_format1.fmt.pix.pixelformat = FRAME_FORMAT1;
-     vid_format1.fmt.pix.sizeimage = framesize1;
-     vid_format1.fmt.pix.field = V4L2_FIELD_NONE;
-     vid_format1.fmt.pix.bytesperline = linewidth1;
-     vid_format1.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+  ret_code = ioctl(fdwr1, VIDIOC_QUERYCAP, &vid_caps1);
+  assert(ret_code != -1);
 
-     // set data format
-     ret_code = ioctl(fdwr1, VIDIOC_S_FMT, &vid_format1);
-     assert(ret_code != -1);
+  memset(&vid_format1, 0, sizeof(vid_format1));
 
-     print_format(&vid_format1);
+  ret_code = ioctl(fdwr1, VIDIOC_G_FMT, &vid_format1);
+
+  linewidth1 = FRAME_WIDTH1;
+  framesize1 = FRAME_WIDTH1 * FRAME_HEIGHT1 * 1; // 8 Bit ??
+
+  vid_format1.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+  vid_format1.fmt.pix.width = FRAME_WIDTH1;
+  vid_format1.fmt.pix.height = FRAME_HEIGHT1;
+  vid_format1.fmt.pix.pixelformat = FRAME_FORMAT1;
+  vid_format1.fmt.pix.sizeimage = framesize1;
+  vid_format1.fmt.pix.field = V4L2_FIELD_NONE;
+  vid_format1.fmt.pix.bytesperline = linewidth1;
+  vid_format1.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+
+  // set data format
+  ret_code = ioctl(fdwr1, VIDIOC_S_FMT, &vid_format1);
+  assert(ret_code != -1);
+
+  print_format(&vid_format1);
 
 
-    //open video_device2
-     printf("using output device: %s\n", video_device2);
-     
-     fdwr2 = open(video_device2, O_RDWR);
-     assert(fdwr2 >= 0);
+//open video_device2
+  printf("using output device: %s\n", video_device2);
+  
+  fdwr2 = open(video_device2, O_RDWR);
+  assert(fdwr2 >= 0);
 
-     ret_code = ioctl(fdwr2, VIDIOC_QUERYCAP, &vid_caps2);
-     assert(ret_code != -1);
+  ret_code = ioctl(fdwr2, VIDIOC_QUERYCAP, &vid_caps2);
+  assert(ret_code != -1);
 
-     memset(&vid_format2, 0, sizeof(vid_format2));
+  memset(&vid_format2, 0, sizeof(vid_format2));
 
-     ret_code = ioctl(fdwr2, VIDIOC_G_FMT, &vid_format2);
+  ret_code = ioctl(fdwr2, VIDIOC_G_FMT, &vid_format2);
 
-     linewidth2=FRAME_WIDTH2;
-     framesize2=FRAME_WIDTH2 * FRAME_HEIGHT2*3; // 8x8x8 Bit
+  linewidth2=FRAME_WIDTH2;
+  framesize2=FRAME_WIDTH2 * FRAME_HEIGHT2*3; // 8x8x8 Bit
 
-     vid_format2.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-     vid_format2.fmt.pix.width = FRAME_WIDTH2;
-     vid_format2.fmt.pix.height = FRAME_HEIGHT2;
-     vid_format2.fmt.pix.pixelformat = FRAME_FORMAT2;
-     vid_format2.fmt.pix.sizeimage = framesize2;
-     vid_format2.fmt.pix.field = V4L2_FIELD_NONE;
-     vid_format2.fmt.pix.bytesperline = linewidth2;
-     vid_format2.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+  vid_format2.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+  vid_format2.fmt.pix.width = FRAME_WIDTH2;
+  vid_format2.fmt.pix.height = FRAME_HEIGHT2;
+  vid_format2.fmt.pix.pixelformat = FRAME_FORMAT2;
+  vid_format2.fmt.pix.sizeimage = framesize2;
+  vid_format2.fmt.pix.field = V4L2_FIELD_NONE;
+  vid_format2.fmt.pix.bytesperline = linewidth2;
+  vid_format2.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
 
-     // set data format
-     ret_code = ioctl(fdwr2, VIDIOC_S_FMT, &vid_format2);
-     assert(ret_code != -1);
+  // set data format
+  ret_code = ioctl(fdwr2, VIDIOC_S_FMT, &vid_format2);
+  assert(ret_code != -1);
 
-     print_format(&vid_format2);
+  print_format(&vid_format2);
 }
 
 
 // unused
 void closev4l2()
 {
-//     close(fdwr0);
+//   close(fdwr0);
      close(fdwr1);
      close(fdwr2);
 
@@ -289,11 +293,11 @@ void scaleData(int min, int max, unsigned short* pix, unsigned char* fb_proc)
 
   for (int y = 0; y < 120; ++y)    //120
   {
-    for (int x = 0; x < 160; ++x)
-    {   //160
+    for (int x = 0; x < 160; ++x) //160
+    {
       int v = (pix[y * 160 + x] - min) * scale >> 8;
 
-  // fb_proc is the gray scale frame buffer
+//    fb_proc is the gray scale frame buffer
       fb_proc[y * 160 + x] = v;   // unsigned char!!
 
     }
@@ -355,7 +359,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   // reset buffer if the new chunk begins with magic bytes or the buffer size limit is exceeded
   unsigned char magicbyte[4]={0xEF,0xBE,0x00,0x00};
   
-  if  ((strncmp (buf, magicbyte,4)==0 ) || ((buf85pointer + actual_length) >= BUF85SIZE))
+  if  ((strncmp (buf, magicbyte, 4) == 0 ) || ((buf85pointer + actual_length) >= BUF85SIZE))
     {
         //printf(">>>>>>>>>>>begin of new frame<<<<<<<<<<<<<\n");
         buf85pointer=0;
@@ -382,7 +386,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
 
   //printf("FrameSize= %d (+28=%d), ThermalSize %d, JPG %d, StatusSize %d, Pointer %d\n",FrameSize,FrameSize+28, ThermalSize, JpgSize,StatusSize,buf85pointer); 
 
-  if ( (FrameSize+28) > (buf85pointer) ) 
+  if ( (FrameSize + 28) > (buf85pointer) ) 
   {
     // wait for next chunk
     return;
@@ -403,7 +407,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
 //  }
 //  printf("\n"); 
   
-  buf85pointer=0;
+  buf85pointer = 0;
   
   unsigned short pix[160 * 120];   // original Flir 16 Bit RAW
   int min, max, maxx, maxy;
@@ -415,7 +419,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   fb_proc = malloc(160 * 128);        // 8 Bit gray buffer really needs only 160 x 120
   memset(fb_proc, 128, 160 * 128);    // sizeof(fb_proc) doesn't work, value depends from LUT
   fb_proc2 = malloc(160 * 128 * 3);   // 8x8x8  Bit RGB buffer 
-  scaleData(min, max, &pix[0], fb_proc);
+  scaleData(min, max, pix, fb_proc);
   
   overlays_write(min, max, maxx, maxy, &fb_proc[0], &pix[0]);
  
@@ -435,11 +439,11 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
 
 
     
-// write video to v4l2loopback(s)
-// write(fdwr0, fb_proc, framesize0);  // gray scale Thermal Image
-   write(fdwr1, &buf85[28 + ThermalSize], JpgSize);  // jpg Visual Image
+//write video to v4l2loopback(s)
+//write(fdwr0, fb_proc, framesize0);  // gray scale Thermal Image
+  write(fdwr1, &buf85[28 + ThermalSize], JpgSize);  // jpg Visual Image
  
-  if (strncmp (&buf85[28 + ThermalSize + JpgSize + 17], "FFC", 3)==0)
+  if (strncmp (&buf85[28 + ThermalSize + JpgSize + 17], "FFC", 3) == 0)
   {
     FFC=1;  // drop all FFC frames
   } 
@@ -461,104 +465,119 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
     
 }
 
- static int find_lvr_flirusb(void)
- {
+static int find_lvr_flirusb(void)
+{
  	devh = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
  	return devh ? 0 : -EIO;
- }
+}
  
- void print_bulk_result(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[])
- {
-         time_t now1;
-         int i;
+void print_bulk_result(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[])
+{
+  time_t now1;
+  int i;
 
-         now1 = time(NULL);
-         if (r < 0) {
-                if (strcmp (EP_error, libusb_error_name(r))!=0)
-                {       
-                    strcpy(EP_error, libusb_error_name(r));
-                    fprintf(stderr, "\n: %s >>>>>>>>>>>>>>>>>bulk transfer (in) %s:%i %s\n", ctime(&now1), ep , r, libusb_error_name(r));
-                    sleep(1);
-                }
-                //return 1;
-        } else
-        {           
-            printf("\n: %s bulk read EP %s, actual length %d\nHEX:\n",ctime(&now1), ep ,actual_length);
-            // write frame to file          
-  /*
-            char filename[100];
-            sprintf(filename, "EP%s#%05i.bin",ep,filecount);
-            filecount++;
-            FILE *file = fopen(filename, "wb");
-            fwrite(buf, 1, actual_length, file);
-            fclose(file);
-  */         
-          // hex print of first byte
-            for (i = 0; i <  (((200)<(actual_length))?(200):(actual_length)); i++) {
-                    printf(" %02x", buf[i]);
-            }
-                 
-            printf("\nSTRING:\n");	
-            for (i = 0; i <  (((200)<(actual_length))?(200):(actual_length)); i++) {
-                    if(buf[i]>31) {printf("%c", buf[i]);}
-            }
-            printf("\n");	
-            
-        } 
- }       
+  now1 = time(NULL);
+  if (r < 0)
+  {
+    if (strcmp (EP_error, libusb_error_name(r))!=0)
+    {       
+      strcpy(EP_error, libusb_error_name(r));
+      fprintf(stderr, "\n: %s >>>>>>>>>>>>>>>>>bulk transfer (in) %s:%i %s\n", ctime(&now1), ep , r, libusb_error_name(r));
+      sleep(1);
+    }
+    //return 1;
+  } else
+  {           
+    printf("\n: %s bulk read EP %s, actual length %d\nHEX:\n",ctime(&now1), ep ,actual_length);
+    
+    // write frame to file          
+    /*
+    char filename[100];
+    sprintf(filename, "EP%s#%05i.bin",ep,filecount);
+    filecount++;
+    FILE *file = fopen(filename, "wb");
+    fwrite(buf, 1, actual_length, file);
+    fclose(file);
+    */
+
+    // hex print of first byte
+    for (i = 0; i <  (((200)<(actual_length))?(200):(actual_length)); i++)
+    {
+      printf(" %02x", buf[i]);
+    }
+          
+    printf("\nSTRING:\n");	
+    for (i = 0; i <  (((200)<(actual_length))?(200):(actual_length)); i++) 
+    {
+      if(buf[i]>31) {printf("%c", buf[i]);}
+    }
+    printf("\n");	
+      
+  } 
+}
  
- int EPloop(unsigned char *colormap)
- {    
- 	int i, r = 1;
+int EPloop(unsigned char *colormap)
+{    
+  int i, r = 1;
+
  	r = libusb_init(NULL);
- 	if (r < 0) {
+ 	if (r < 0)
+  {
  		fprintf(stderr, "failed to initialise libusb\n");
  		exit(1);
  	}
  	
-  	r = find_lvr_flirusb();
- 	if (r < 0) {
+  r = find_lvr_flirusb();
+ 	if (r < 0) 
+  {
  		fprintf(stderr, "Could not find/open device\n");
  		goto out;
  	}
  	printf("Successfully find the Flir One G2 device\n");
 	
 
-    r = libusb_set_configuration(devh, 3);
-    if (r < 0) {
-        fprintf(stderr, "libusb_set_configuration error %d\n", r);
-        goto out;
-    }
-    printf("Successfully set usb configuration 3\n");
+  r = libusb_set_configuration(devh, 3);
+  if (r < 0)
+  {
+      fprintf(stderr, "libusb_set_configuration error %d\n", r);
+      goto out;
+  }
+  printf("Successfully set usb configuration 3\n");
 	
  
  	// Claiming of interfaces is a purely logical operation; 
-    // it does not cause any requests to be sent over the bus. 
+  // it does not cause any requests to be sent over the bus. 
  	r = libusb_claim_interface(devh, 0);
- 	if (r <0) {
+ 	if (r < 0) 
+  {
  		fprintf(stderr, "libusb_claim_interface 0 error %d\n", r);
  		goto out;
  	}	
+
  	r = libusb_claim_interface(devh, 1);
- 	if (r < 0) {
+ 	if (r < 0) 
+  {
  		fprintf(stderr, "libusb_claim_interface 1 error %d\n", r);
  		goto out;
  	}
+
  	r = libusb_claim_interface(devh, 2);
- 	if (r < 0) {
+ 	if (r < 0)
+  {
  		fprintf(stderr, "libusb_claim_interface 2 error %d\n", r);
  		goto out;
  	}
+
  	printf("Successfully claimed interface 0,1,2\n");
 	
  	
 	unsigned char buf[1048576]; 
-    int actual_length;
+  int actual_length;
 
  	time_t now;
  	// save last error status to avoid clutter the log
-	char EP81_error[50]="", EP83_error[50]="",EP85_error[50]=""; 
- 	unsigned char data[2]={0,0}; // only a bad dummy
+	char EP81_error[50] = "", EP83_error[50] = "", EP85_error[50] = ""; 
+ 	unsigned char data[2] = {0, 0}; // only a bad dummy
  	
  	// don't forget: $ sudo modprobe v4l2loopback video_nr=0,1
  	startv4l2();
@@ -566,246 +585,326 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
  	int state = 1; 
  	int ct=0;
 
-    while (1)
+  while (1)
+  {
+    
+    switch(state)
     {
-    	
-    switch(state) {
         
-         case 1:
-            /* Flir config
-            01 0b 01 00 01 00 00 00 c4 d5
-            0 bmRequestType = 01
-            1 bRequest = 0b
-            2 wValue 0001 type (H) index (L)    stop=0/start=1 (Alternate Setting)
-            4 wIndex 01                         interface 1/2
-            5 wLength 00
-            6 Data 00 00
+        case 1:
+          /*
+          
+          Flir config
+          01 0b 01 00 01 00 00 00 c4 d5
+          0 bmRequestType = 01
+          1 bRequest = 0b
+          2 wValue 0001 type (H) index (L)    stop=0/start=1 (Alternate Setting)
+          4 wIndex 01                         interface 1/2
+          5 wLength 00
+          6 Data 00 00
 
-            libusb_control_transfer (*dev_handle, bmRequestType, bRequest, wValue,  wIndex, *data, wLength, timeout)
-            */
- 	
-            printf("stop interface 2 FRAME\n");
-            r = libusb_control_transfer(devh,1,0x0b,0,2,data,0,100);
-            if (r < 0) {
-                fprintf(stderr, "Control Out error %d\n", r);
-                return r;
-            }
+          libusb_control_transfer (*dev_handle, bmRequestType, bRequest, wValue,  wIndex, *data, wLength, timeout)
 
-            printf("stop interface 1 FILEIO\n");
-            r = libusb_control_transfer(devh,1,0x0b,0,1,data,0,100);
-            if (r < 0) {
-                fprintf(stderr, "Control Out error %d\n", r);
-                return r;
-            } 
-             	
-         	printf("\nstart interface 1 FILEIO\n");
-         	r = libusb_control_transfer(devh,1,0x0b,1,1,data,0,100);
- 	        if (r < 0) {
- 		        fprintf(stderr, "Control Out error %d\n", r);
- 		        return r;
- 	        }
- 	        now = time(0); // Get the system time
-            printf("\n:xx %s",ctime(&now));
- 	        state = 3;   // jump over wait stait 2. Not really using any data from CameraFiles.zip
-            break;
+          */
+
+          printf("stop interface 2 FRAME\n");
+          r = libusb_control_transfer(devh,1,0x0b,0,2,data,0,100);
+          if (r < 0) {
+              fprintf(stderr, "Control Out error %d\n", r);
+              return r;
+          }
+
+          printf("stop interface 1 FILEIO\n");
+          r = libusb_control_transfer(devh,1,0x0b,0,1,data,0,100);
+          if (r < 0) {
+              fprintf(stderr, "Control Out error %d\n", r);
+              return r;
+          } 
+            
+          printf("\nstart interface 1 FILEIO\n");
+          r = libusb_control_transfer(devh,1,0x0b,1,1,data,0,100);
+          if (r < 0) {
+            fprintf(stderr, "Control Out error %d\n", r);
+            return r;
+          }
+          now = time(0); // Get the system time
+          printf("\n:xx %s",ctime(&now));
+          state = 3;   // jump over wait stait 2. Not really using any data from CameraFiles.zip
+          break;
         
         
         case 2:
-         	printf("\nask for CameraFiles.zip on EP 0x83:\n");     
-         	now = time(0); // Get the system time
-            printf("\n: %s",ctime(&now));
-   
-            int transferred = 0;
-            char my_string[128];
+          printf("\nask for CameraFiles.zip on EP 0x83:\n");     
+          now = time(0); // Get the system time
+          printf("\n: %s",ctime(&now));
+    
+          int transferred = 0;
+          char my_string[128];
 
-            //--------- write string: {"type":"openFile","data":{"mode":"r","path":"CameraFiles.zip"}}
-            int length = 16;
-            unsigned char my_string2[16]={0xcc,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x41,0x00,0x00,0x00,0xF8,0xB3,0xF7,0x00};
-            printf("\nEP 0x02 to be sent Hexcode: %i Bytes[",length);
-            int i;
-            for (i = 0; i < length; i++) {
-                printf(" %02x", my_string2[i]);
-
-            }
-            printf(" ]\n");
+          //--------- write string: {"type":"openFile","data":{"mode":"r","path":"CameraFiles.zip"}}
+          int length = 16;
+          unsigned char my_string2[16]={0xcc,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x41,0x00,0x00,0x00,0xF8,0xB3,0xF7,0x00};
+          printf("\nEP 0x02 to be sent Hexcode: %i Bytes[",length);
+          int i;
+          for (i = 0; i < length; i++)
+          {
+              printf(" %02x", my_string2[i]);
+          }
+          printf(" ]\n");
     
-            r = libusb_bulk_transfer(devh, 2, my_string2, length, &transferred, 0);
-            if(r == 0 && transferred == length)
-            {
-                printf("\nWrite successful!");
-            }
-            else
-                printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
+          r = libusb_bulk_transfer(devh, 2, my_string2, length, &transferred, 0);
+          if(r == 0 && transferred == length)
+          {
+            printf("\nWrite successful!");
+          }
+          else
+          {
+            printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
+          }
     
-            strcpy(  my_string,"{\"type\":\"openFile\",\"data\":{\"mode\":\"r\",\"path\":\"CameraFiles.zip\"}}");
+          strcpy(  my_string,"{\"type\":\"openFile\",\"data\":{\"mode\":\"r\",\"path\":\"CameraFiles.zip\"}}");
     
-            length = strlen(my_string)+1;
-            printf("\nEP 0x02 to be sent: %s", my_string);
+          length = strlen(my_string)+1;
+          printf("\nEP 0x02 to be sent: %s", my_string);
     
-            // avoid error: invalid conversion from ‘char*’ to ‘unsigned char*’ [-fpermissive]
-            unsigned char *my_string1 = (unsigned char*)my_string;
-            //my_string1 = (unsigned char*)my_string;
+          // avoid error: invalid conversion from ‘char*’ to ‘unsigned char*’ [-fpermissive]
+          unsigned char *my_string1 = (unsigned char*)my_string;
+          //my_string1 = (unsigned char*)my_string;
             
-            r = libusb_bulk_transfer(devh, 2, my_string1, length, &transferred, 0);
-            if(r == 0 && transferred == length)
-            {
-                printf("\nWrite successful!");
-                printf("\nSent %d bytes with string: %s\n", transferred, my_string);
-            }
-            else
-                printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
- 
-            //--------- write string: {"type":"readFile","data":{"streamIdentifier":10}}
-            length = 16;
-            unsigned char my_string3[16]={0xcc,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x33,0x00,0x00,0x00,0xef,0xdb,0xc1,0xc1};
-            printf("\nEP 0x02 to be sent Hexcode: %i Bytes[",length);
-            for (i = 0; i < length; i++) {
-                printf(" %02x", my_string3[i]);
+          r = libusb_bulk_transfer(devh, 2, my_string1, length, &transferred, 0);
+          if(r == 0 && transferred == length)
+          {
+            printf("\nWrite successful!");
+            printf("\nSent %d bytes with string: %s\n", transferred, my_string);
+          }
+          else
+          {
+            printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
+          }
 
-            }
-            printf(" ]\n");
-    
-            r = libusb_bulk_transfer(devh, 2, my_string3, length, &transferred, 0);
-            if(r == 0 && transferred == length)
-            {
-                printf("\nWrite successful!");
-            }
-            else
-                printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
+          //--------- write string: {"type":"readFile","data":{"streamIdentifier":10}}
+          length = 16;
+          unsigned char my_string3[16]={0xcc,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x33,0x00,0x00,0x00,0xef,0xdb,0xc1,0xc1};
+          printf("\nEP 0x02 to be sent Hexcode: %i Bytes[",length);
+          for (i = 0; i < length; i++) 
+          {
+            printf(" %02x", my_string3[i]);
+          }
+          printf(" ]\n");
+  
+          r = libusb_bulk_transfer(devh, 2, my_string3, length, &transferred, 0);
+          if(r == 0 && transferred == length)
+          {
+            printf("\nWrite successful!");
+          }
+          else
+          {
+            printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
+          }
+
+          //strcpy(  my_string, "{\"type\":\"setOption\",\"data\":{\"option\":\"autoFFC\",\"value\":true}}");
+          strcpy( my_string, "{\"type\":\"readFile\",\"data\":{\"streamIdentifier\":10}}");
+          length = strlen(my_string) + 1;
+          printf("\nEP 0x02 to be sent %i Bytes: %s", length, my_string);
+  
+          // avoid error: invalid conversion from ‘char*’ to ‘unsigned char*’ [-fpermissive]
+          my_string1 = (unsigned char*)my_string;
+          
+          r = libusb_bulk_transfer(devh, 2, my_string1, length, &transferred, 0);
+          if(r == 0 && transferred == length)
+          {
+              printf("\nWrite successful!");
+              printf("\nSent %d bytes with string: %s\n", transferred, my_string);
+          }
+          else
+              printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
 
 
-            //strcpy(  my_string, "{\"type\":\"setOption\",\"data\":{\"option\":\"autoFFC\",\"value\":true}}");
-            strcpy(  my_string,"{\"type\":\"readFile\",\"data\":{\"streamIdentifier\":10}}");
-            length = strlen(my_string)+1;
-            printf("\nEP 0x02 to be sent %i Bytes: %s", length, my_string);
-    
-            // avoid error: invalid conversion from ‘char*’ to ‘unsigned char*’ [-fpermissive]
-            my_string1 = (unsigned char*)my_string;
-            
-            r = libusb_bulk_transfer(devh, 2, my_string1, length, &transferred, 0);
-            if(r == 0 && transferred == length)
-            {
-                printf("\nWrite successful!");
-                printf("\nSent %d bytes with string: %s\n", transferred, my_string);
-            }
-            else
-                printf("\nError in write! res = %d and transferred = %d\n", r, transferred);
- 
- 
-            // go to next state
-            now = time(0); // Get the system time
-            printf("\n: %s",ctime(&now));
-            //sleep(1);
-            state = 3;           
-            break;
+          // go to next state
+          now = time(0); // Get the system time
+          printf("\n: %s", ctime(&now));
+          //sleep(1);
+          state = 3;           
+          break;
     
 
         case 3:
-         	printf("\nAsk for video stream, start EP 0x85:\n");        
+          printf("\nAsk for video stream, start EP 0x85:\n");        
 
-            r = libusb_control_transfer(devh,1,0x0b,1,2,data, 2,200);
-            if (r < 0) {
-                fprintf(stderr, "Control Out error %d\n", r);
-                return r;
-            };
+          r = libusb_control_transfer(devh,1, 0x0b, 1, 2, data, 2, 200);
+          if (r < 0) 
+          {
+              fprintf(stderr, "Control Out error %d\n", r);
+              return r;
+          };
 
-            state = 4;
-            break;
+          state = 4;
+          break;
 
         case 4:
-            // endless loop 
-            // poll Frame Endpoints 0x85 
-            // don't change timeout=100ms !!
-            r = libusb_bulk_transfer(devh, 0x85, buf, sizeof(buf), &actual_length, 100); 
-            if (actual_length > 0)
-                vframe("0x85",EP85_error, r, actual_length, buf, colormap);
-   
-            break;      
+          // endless loop 
+          // poll Frame Endpoints 0x85 
+          // don't change timeout=100ms !!
+          r = libusb_bulk_transfer(devh, 0x85, buf, sizeof(buf), &actual_length, 100); 
+          if (actual_length > 0)
+          {
+            vframe("0x85", EP85_error, r, actual_length, buf, colormap);
+          }
+  
+          break;      
 
         }    
 
-        // poll Endpoints 0x81, 0x83
-        r = libusb_bulk_transfer(devh, 0x81, buf, sizeof(buf), &actual_length, 10); 
-/*
-        if (actual_length > 0 && actual_length <= 101)
-	{
+      // poll Endpoints 0x81, 0x83
+      r = libusb_bulk_transfer(devh, 0x81, buf, sizeof(buf), &actual_length, 10); 
+      
+      /*
+
+      if (actual_length > 0 && actual_length <= 101)
+      {
+        char k[5];
+        if (strncmp (&buf[32],"VoltageUpdate",13)==0)
+        {
+          printf("xx %d\n",actual_length);
 
 
+          char *token, *string, *tofree, *string2;
+//      	char l;
+          strcpy(string,buf);
+//        string = buf;
+//	      assert(string != NULL);
+          printf("yy\n");
 
-	char k[5];
-	if (strncmp (&buf[32],"VoltageUpdate",13)==0)
-	{
-	printf("xx %d\n",actual_length);
+          for (i = 32; i <  (((200)<(actual_length))?(200):(actual_length)); i++) 
+          {
+            if(string[i]>31) 
+            {
+              printf("%c", string[i]);
+//	      	  printf("%d ", i);
+//	      	  string2[i-32] = string[i];
+            }
+          }
 
+          while ((token = strsep(&string, ":")) != NULL)
+          {      
+            printf("zz\n");
+            printf("%s\n", token);
+          }
 
-        char *token, *string, *tofree, *string2;
-//	char l;
-	strcpy(string,buf);
-//       string = buf;
-//	 assert(string != NULL);
-	printf("yy\n");
-
-        for (i = 32; i <  (((200)<(actual_length))?(200):(actual_length)); i++) 
-		{
-                    if(string[i]>31) 
-		    {
-		    printf("%c", string[i]);
-//		    printf("%d ", i);
-//		    string2[i-32] = string[i];
-		    }
-		}
-
-           while ((token = strsep(&string, ":")) != NULL)
-            {      
-	    printf("zz\n");
-	    printf("%s\n", token);
-	    }
-
-//           free(tofree);
-//        for (i = 32; i <  (((200)<(actual_length))?(200):(actual_length)); i++) {
-//                    if(buf[i]>31) {printf("%c", buf[i]);}
-//            }
-
-
-	}
-	}
-
+//        free(tofree);
+//        for (i = 32; i <  (((200)<(actual_length))?(200):(actual_length)); i++) 
+//        {
+//          if(buf[i]>31) 
+//          {
+//            printf("%c", buf[i]);
+//          }
+//        }
+        }
+      }
 
 */
 
-        r = libusb_bulk_transfer(devh, 0x83, buf, sizeof(buf), &actual_length, 10); 
-        if (strcmp(libusb_error_name(r), "LIBUSB_ERROR_NO_DEVICE")==0) {
- 	    	fprintf(stderr, "EP 0x83 LIBUSB_ERROR_NO_DEVICE -> reset USB\n");
-    		goto out;
- 	    }
-//        print_bulk_result("0x83",EP83_error, r, actual_length, buf); 
-}
+      r = libusb_bulk_transfer(devh, 0x83, buf, sizeof(buf), &actual_length, 10); 
+      if (strcmp(libusb_error_name(r), "LIBUSB_ERROR_NO_DEVICE")==0) 
+      {
+        fprintf(stderr, "EP 0x83 LIBUSB_ERROR_NO_DEVICE -> reset USB\n");
+        goto out;
+      } 
+//    print_bulk_result("0x83",EP83_error, r, actual_length, buf); 
+  
+  }
     
-    // never reached ;-)
+  // never reached ;-)
  	libusb_release_interface(devh, 0);
  	
- out:
-    //close the device
- 	libusb_reset_device(devh);
- 	libusb_close(devh);
+  out:
+  //close the device
+  
+  if (devh != NULL)
+  {
+ 	  libusb_reset_device(devh);
+  }
+  libusb_close(devh);
  	libusb_exit(NULL);
  	return r >= 0 ? r : -r;
- }
+}
+
+void usage_print(char* arg)
+{
+	fprintf(stderr, "Usage: %s [--waitdevice] [--nooverlays] palette.raw\n", arg) ;
+}
 
 int main(int argc, char **argv)
 {
-  int i;
+  unsigned short switches = 0x00;
+  char* switch_prefix = "--";
+
   unsigned char colormap[768];
+  char* palette_file;
   FILE *fp;
 
-	if(argc < 2) {
-		fprintf(stderr, "\nUsage:flir8o palette.raw\n");
-		exit(1);
+	if(argc < 2) 
+  {
+    fprintf(stderr, "\n");
+		usage_print(argv[0]);
+    exit(1);
 	}
 
-  fp = fopen(argv[1], "rb");
-  fread(colormap, sizeof(unsigned char), 768, fp);  // read 256 rgb values
-  fclose(fp);
+  if  (argc == 2)
+  {
+    if (strncmp(argv[1], switch_prefix, 2) == 0)
+    {
+      fprintf(stderr, "\nPalette file absent.\n");
+      usage_print(argv[0]);
+      exit(1);
+    }
+    else
+    {
+      palette_file = argv[1];
+    }  
+  }
+
+  if (argc > 2)
+  {
+    for(int i=1; i<(argc-1); i++)
+    {
+      // switches
+      if (strncmp(argv[i], "--waitdevice", 13) == 0)
+      {
+        switches |= 0x01;
+      }
+      else if (strncmp(argv[i], "--nooverlays", 13) == 0)
+      {
+        switches |= 0x02;
+      }
+      else if (strncmp(argv[i], switch_prefix, strlen(switch_prefix)) == 0)
+      {
+        fprintf(stderr, "\nUnknown switch '%s'.\n", argv[i]);
+        usage_print(argv[0]);
+        exit(1);
+      }
+      else
+      {
+        fprintf(stderr, "\nParameter not recognized: '%s'. Pallete file must be the last parameter.\n", argv[i]);
+        usage_print(argv[0]);
+        exit(1);
+      }
+      
+    }
+    palette_file = argv[argc - 1];
+  }
+
+  fp = fopen(palette_file, "rb");
+  if (fp != NULL)
+  {
+    fread(colormap, sizeof(unsigned char), 768, fp);  // read 256 rgb values
+    fclose(fp);
+  }
+  else
+  {
+     fprintf(stderr, "\nPalette file '%s' not found.\n", palette_file);
+     exit(1);
+  }
 
   while (1)
   {
