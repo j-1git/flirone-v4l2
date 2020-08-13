@@ -140,7 +140,6 @@ double raw2temperature(unsigned short RAW)
   return PlanckB / log(PlanckR1 / (PlanckR2 * (RAWobj + PlanckO)) + PlanckF) - 273.15;  
 }
 
-
 void startv4l2()
 {
   int ret_code = 0;
@@ -215,7 +214,7 @@ void startv4l2()
   print_format(&vid_format1);
 
 
-//open video_device2
+  //open video_device2
   printf("using output device: %s\n", video_device2);
   
   fdwr2 = open(video_device2, O_RDWR);
@@ -229,7 +228,7 @@ void startv4l2()
   ret_code = ioctl(fdwr2, VIDIOC_G_FMT, &vid_format2);
 
   linewidth2=FRAME_WIDTH2;
-  framesize2=FRAME_WIDTH2 * FRAME_HEIGHT2*3; // 8x8x8 Bit
+  framesize2=FRAME_WIDTH2 * FRAME_HEIGHT2 * 3; // 8x8x8 Bit
 
   vid_format2.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
   vid_format2.fmt.pix.width = FRAME_WIDTH2;
@@ -246,7 +245,6 @@ void startv4l2()
 
   print_format(&vid_format2);
 }
-
 
 // unused
 void closev4l2()
@@ -268,9 +266,9 @@ void calcExtremeValues(int *min, int *max, int* maxx, int* maxy, float* rms, uns
   {
     for (int x = 0; x < 160; ++x) {
       if (x < 80) 
-         v = buf85[2*(y * 164 + x) +32] + 256 * buf85[2*(y * 164 + x) +33];
+         v = buf85[2 * (y * 164 + x) + 32] + 256 * buf85[2*(y * 164 + x) +33];
       else
-         v = buf85[2*(y * 164 + x) +32+4] + 256 * buf85[2*(y * 164 + x) +33+4];   
+         v = buf85[2 * (y * 164 + x) +32 + 4] + 256 * buf85[2*(y * 164 + x) +33 + 4];   
       
       pix[y * 160 + x] = v;   // unsigned char!!
       
@@ -347,23 +345,23 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   time_t now1;
   now1 = time(NULL); 
   if (r < 0) {
-    if (strcmp (EP_error, libusb_error_name(r))!=0)
+    if (strcmp (EP_error, libusb_error_name(r)) !=0 )
     {       
-        strcpy(EP_error, libusb_error_name(r));
-        fprintf(stderr, "\n: %s >>>>>>>>>>>>>>>>>bulk transfer (in) %s:%i %s\n", ctime(&now1), ep , r, libusb_error_name(r));
-        sleep(1);
+      strcpy(EP_error, libusb_error_name(r));
+      fprintf(stderr, "\n: %s >>>>>>>>>>>>>>>>>bulk transfer (in) %s:%i %s\n", ctime(&now1), ep , r, libusb_error_name(r));
+      sleep(1);
     }
     return;
   }
   
   // reset buffer if the new chunk begins with magic bytes or the buffer size limit is exceeded
-  unsigned char magicbyte[4]={0xEF,0xBE,0x00,0x00};
+  unsigned char magicbyte[4]={0xEF, 0xBE, 0x00, 0x00};
   
   if  ((strncmp (buf, magicbyte, 4) == 0 ) || ((buf85pointer + actual_length) >= BUF85SIZE))
-    {
-        //printf(">>>>>>>>>>>begin of new frame<<<<<<<<<<<<<\n");
-        buf85pointer=0;
-    }
+  {
+    //printf(">>>>>>>>>>>begin of new frame<<<<<<<<<<<<<\n");
+    buf85pointer=0;
+  }
  
   //printf("actual_length %d !!!!!\n", actual_length);
 
@@ -445,13 +443,13 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
  
   if (strncmp (&buf85[28 + ThermalSize + JpgSize + 17], "FFC", 3) == 0)
   {
-    FFC=1;  // drop all FFC frames
+    FFC = 1;  // drop all FFC frames
   } 
   else    
   {        
-    if (FFC==1)
+    if (FFC == 1)
     {
-      FFC=0; // drop first frame after FFC
+      FFC = 0; // drop first frame after FFC
     }
     else
     {             
@@ -608,27 +606,27 @@ int EPloop(unsigned char *colormap)
           */
 
           printf("stop interface 2 FRAME\n");
-          r = libusb_control_transfer(devh,1,0x0b,0,2,data,0,100);
+          r = libusb_control_transfer(devh, 1, 0x0b, 0, 2, data, 0, 100);
           if (r < 0) {
               fprintf(stderr, "Control Out error %d\n", r);
               return r;
           }
 
           printf("stop interface 1 FILEIO\n");
-          r = libusb_control_transfer(devh,1,0x0b,0,1,data,0,100);
+          r = libusb_control_transfer(devh, 1, 0x0b, 0, 1, data, 0, 00);
           if (r < 0) {
               fprintf(stderr, "Control Out error %d\n", r);
               return r;
           } 
             
           printf("\nstart interface 1 FILEIO\n");
-          r = libusb_control_transfer(devh,1,0x0b,1,1,data,0,100);
+          r = libusb_control_transfer(devh, 1, 0x0b, 1, 1, data, 0, 100);
           if (r < 0) {
             fprintf(stderr, "Control Out error %d\n", r);
             return r;
           }
           now = time(0); // Get the system time
-          printf("\n:xx %s",ctime(&now));
+          printf("\n:xx %s", ctime(&now));
           state = 3;   // jump over wait stait 2. Not really using any data from CameraFiles.zip
           break;
         
@@ -916,7 +914,7 @@ int main(int argc, char **argv)
   char* palette_file = argv[argc - 1];
   
   unsigned char* colormap = read_palette(palette_file);
-  
+   
   while (1)
   {
     EPloop(colormap);
