@@ -834,16 +834,13 @@ void usage_print(char* arg)
 	fprintf(stderr, "Usage: %s [--waitdevice] [--nooverlays] palette.raw\n", arg) ;
 }
 
-int main(int argc, char **argv)
+unsigned short parse_args(int argc, char **argv)
 {
   unsigned short switches = 0x00;
   char* switch_prefix = "--";
-
-  unsigned char colormap[768];
   char* palette_file;
-  FILE *fp;
 
-	if(argc < 2) 
+  if(argc < 2) 
   {
     fprintf(stderr, "\n");
 		usage_print(argv[0]);
@@ -866,7 +863,7 @@ int main(int argc, char **argv)
 
   if (argc > 2)
   {
-    for(int i=1; i<(argc-1); i++)
+    for(int i=1; i<argc; i++)
     {
       // switches
       if (strncmp(argv[i], "--waitdevice", 13) == 0)
@@ -883,17 +880,22 @@ int main(int argc, char **argv)
         usage_print(argv[0]);
         exit(1);
       }
-      else
+      else if (i != (argc - 1))
       {
         fprintf(stderr, "\nParameter not recognized: '%s'. Pallete file must be the last parameter.\n", argv[i]);
         usage_print(argv[0]);
         exit(1);
-      }
-      
+      } 
     }
     palette_file = argv[argc - 1];
   }
+  return switches;
+}
 
+unsigned char* read_palette(char* palette_file)
+{
+  static unsigned char colormap[768];
+  FILE *fp;
   fp = fopen(palette_file, "rb");
   if (fp != NULL)
   {
@@ -905,7 +907,16 @@ int main(int argc, char **argv)
      fprintf(stderr, "\nPalette file '%s' not found.\n", palette_file);
      exit(1);
   }
+  return colormap;
+}
 
+int main(int argc, char **argv)
+{
+	unsigned short switches = parse_args(argc, argv);
+  char* palette_file = argv[argc - 1];
+  
+  unsigned char* colormap = read_palette(palette_file);
+  
   while (1)
   {
     EPloop(colormap);
