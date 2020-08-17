@@ -50,7 +50,7 @@
 #define FRAME_WIDTH2  160
 #define FRAME_HEIGHT2 128
 
-#define FRAME_FORMAT0 V4L2_PIX_FMT_GREY
+#define FRAME_FORMAT0 V4L2_PIX_FMT_RGB24;
 #define FRAME_FORMAT1 V4L2_PIX_FMT_MJPEG
 #define FRAME_FORMAT2 V4L2_PIX_FMT_RGB24
 
@@ -160,9 +160,8 @@ void startv4l2()
 
   ret_code = ioctl(fdwr0, VIDIOC_G_FMT, &vid_format0);
 
-  linewidth0=FRAME_WIDTH0;
-  framesize0=FRAME_WIDTH0*FRAME_HEIGHT0*1; // 8 Bit
-
+  linewidth0 = FRAME_WIDTH0;
+  framesize0 = FRAME_WIDTH0 * FRAME_HEIGHT0 * 3; // 16 bit 
   vid_format0.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
   vid_format0.fmt.pix.width = FRAME_WIDTH0;
   vid_format0.fmt.pix.height = FRAME_HEIGHT0;
@@ -224,8 +223,8 @@ void startv4l2()
 
   ret_code = ioctl(fdwr2, VIDIOC_G_FMT, &vid_format2);
 
-  linewidth2=FRAME_WIDTH2;
-  framesize2=FRAME_WIDTH2 * FRAME_HEIGHT2 * 3; // 8x8x8 Bit
+  linewidth2 =FRAME_WIDTH2;
+  framesize2 = FRAME_WIDTH2 * FRAME_HEIGHT2 * 3; // 8x8x8 Bit
 
   vid_format2.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
   vid_format2.fmt.pix.width = FRAME_WIDTH2;
@@ -255,7 +254,6 @@ void closev4l2()
 void buffer_reshape(unsigned short* pix)
 {
   // Make a unsigned short array from what comes from the thermal frame
-  // find the max, min and RMS (not used yet) values of the array
   int v;
   for (int y = 0; y < 120; ++y) 
   {
@@ -292,7 +290,7 @@ void get_extreme_values(unsigned short* pix, int *min, int *max, int* maxx, int*
 
 void scale_data(int min, int max, unsigned short* pix, unsigned char* fb_proc)
 {
-  // scale the data in the array
+  // scale the data in the array pix to array fb_proc
   int delta = max - min;
   if (!delta) delta = 1;   // if max = min we have divide by zero
   int scale = 0x10000 / delta;
@@ -360,6 +358,26 @@ void palette_apply(unsigned char *colormap, unsigned char* fb_proc, unsigned cha
       fb_proc2[3 * y * 160 + x * 3] = colormap[3 * v];             // unsigned char!!
       fb_proc2[(3 * y * 160 + x * 3) + 1] = colormap[3 * v + 1];   // unsigned char!!
       fb_proc2[(3 * y * 160 + x * 3) + 2] = colormap[3 * v + 2];   // unsigned char!!
+    }
+  }
+}
+
+void transfer_raw(int unsigned short* pix, unsigned char* fb_proc0)
+{
+  // transfer 16 bit raw grayscale
+  for (int y = 0; y < 120; ++y)
+  {
+    for (int x = 0; x < 160; ++x)
+    {
+      int v = pix[y * 160 + x];
+
+      unsigned char r = 0;
+      unsigned char g = (unsigned char) ((v >> 8) & 0xff);
+      unsigned char b = (unsigned char) (v & 0xff);
+
+      fb_proc0[3 * y * 160 + x * 3]       = r;
+      fb_proc0[(3 * y * 160 + x * 3) + 1] = g;
+      fb_proc0[(3 * y * 160 + x * 3) + 2] = b;
     }
   }
 }
@@ -437,18 +455,23 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   float rms = 0;
   buffer_reshape(&pix[0]);
   get_extreme_values(&pix[0], &min, &max, &maxx, &maxy, &rms);
- 
-  unsigned char *fb_proc, *fb_proc2; 
+
+  unsigned char *fb_proc0, *fb_proc, *fb_proc2;
+
+  fb_proc0 = malloc(160 * 120 * 3);   // 8x8x8 bit RGB buffer for RAW data thermal image
   fb_proc = malloc(160 * 128);        // 8 Bit gray buffer really needs only 160 x 120
+  fb_proc2 = malloc(160 * 128 * 3);   // 8x8x8 bit RGB buffer
+
   memset(fb_proc, 128, 160 * 128);    // sizeof(fb_proc) doesn't work, value depends from LUT
-  fb_proc2 = malloc(160 * 128 * 3);   // 8x8x8  Bit RGB buffer 
   
+  transfer_raw(&pix[0], &fb_proc0[0]);
   scale_data(min, max, pix, fb_proc);
   overlays_write(min, max, maxx, maxy, &pix[0], &fb_proc[0]);
   palette_apply(colormap, fb_proc, fb_proc2);
     
-//write video to v4l2loopback(s)
-  write(fdwr0, fb_proc, framesize0);  // gray scale Thermal Image
+  //write video to v4l2loopback(s)
+//write(fdwr0, fb_proc, framesize0);  // gray scale Thermal Image
+  
   write(fdwr1, &buf85[28 + ThermalSize], JpgSize);  // jpg Visual Image
   if (strncmp (&buf85[28 + ThermalSize + JpgSize + 17], "FFC", 3) == 0)
   {
@@ -459,15 +482,18 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
     if (FFC == 1)
     {
       FFC = 0; // drop first frame after FFC
+      printf("FFC frame\n");
     }
     else
     {             
+      write(fdwr0, fb_proc0, framesize0);  // gray scale Thermal Image
       write(fdwr2, fb_proc2, framesize2);  // colorized RGB Thermal Image
     }
   }
 
   // free memory
-  free(fb_proc);                    // thermal RAW
+  free(fb_proc0);                   // thermal RAW
+  free(fb_proc);                    // grayscale scaled thermal
   free(fb_proc2);                   // visible jpg
     
 }
@@ -493,7 +519,8 @@ void print_bulk_result(char ep[],char EP_error[], int r, int actual_length, unsi
       sleep(1);
     }
     //return 1;
-  } else
+  } 
+  else
   {           
     printf("\n: %s bulk read EP %s, actual length %d\nHEX:\n",ctime(&now1), ep ,actual_length);
     
