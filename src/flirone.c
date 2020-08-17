@@ -44,7 +44,10 @@
 
 #define VIDEO_DEVICE0 "/dev/video1"  // gray scale thermal image
 #define FRAME_WIDTH0  160
+#define FRAME_HALF_WIDTH0  80
 #define FRAME_HEIGHT0 120
+#define FRAME_HALF_HEIGHT0 60
+
 
 #define VIDEO_DEVICE1 "/dev/video2" // color visible image
 #define FRAME_WIDTH1  640
@@ -122,9 +125,9 @@ void font_write(unsigned char *fb, int x, int y, const char *string)
     for (ry = 0; ry < 5; ++ry) {
       for (rx = 0; rx < 7; ++rx) {
         int v = (font5x7_basic[((*string) & 0x7F) - CHAR_OFFSET][ry] >> (rx)) & 1;
-//	    fb[(y+ry) * 160 + (x + rx)] = v ? 0 : 0xFF;                         // black / white
-//	    fb[(y+rx) * 160 + (x + ry)] = v ? 0 : 0xFF;                         // black / white
-        fb[(y+rx) * 160 + (x + ry)] = v ? 0 : fb[(y+rx) * 160 + (x + ry)];  // transparent
+//	    fb[(y+ry) * FRAME_WIDTH0 + (x + rx)] = v ? 0 : 0xFF;                         // black / white
+//	    fb[(y+rx) * FRAME_WIDTH0 + (x + ry)] = v ? 0 : 0xFF;                         // black / white
+        fb[(y+rx) * FRAME_WIDTH0 + (x + ry)] = v ? 0 : fb[(y+rx) * FRAME_WIDTH0 + (x + ry)];  // transparent
       }
     }
     string++;
@@ -249,9 +252,9 @@ void startv4l2()
 // unused
 void closev4l2()
 {
-//   close(fdwr0);
-     close(fdwr1);
-     close(fdwr2);
+  close(fdwr0);
+  close(fdwr1);
+  close(fdwr2);
 
 }
 
@@ -259,15 +262,15 @@ void buffer_reshape(unsigned short* pix)
 {
   // Make a unsigned short array from what comes from the thermal frame
   int v;
-  for (int y = 0; y < 120; ++y) 
+  for (int y = 0; y < FRAME_HEIGHT0; ++y) 
   {
-    for (int x = 0; x < 160; ++x) {
+    for (int x = 0; x < FRAME_WIDTH0; ++x) {
       if (x < 80) 
          v = buf85[2 * (y * 164 + x) + 32]     + 256 * buf85[2 * (y * 164 + x) + 33];
       else
          v = buf85[2 * (y * 164 + x) + 32 + 4] + 256 * buf85[2 * (y * 164 + x) + 33 + 4];   
       
-      pix[y * 160 + x] = v;   // unsigned char!!
+      pix[y * FRAME_WIDTH0 + x] = v;   // unsigned char!!
     }
   }
 }
@@ -277,10 +280,10 @@ void get_extreme_values(unsigned short* pix, int *min, int *max, int* maxx, int*
   *min = 0x10000;
   *max = 0;
   int v;
-  for (int y = 0; y < 120; ++y) 
+  for (int y = 0; y < FRAME_HEIGHT0; ++y) 
   {
-    for (int x = 0; x < 160; ++x) {
-      v = pix[y * 160 + x];
+    for (int x = 0; x < FRAME_WIDTH0; ++x) {
+      v = pix[y * FRAME_WIDTH0 + x];
       
       if (v < *min) { *min = v; }
       if (v > *max) { *max = v; *maxx = x; *maxy = y; }
@@ -288,7 +291,7 @@ void get_extreme_values(unsigned short* pix, int *min, int *max, int* maxx, int*
     }
   }
   // RMS used later
-  // rms /= 160 * 120;
+  // rms /= FRAME_WIDTH0 * FRAME_HEIGHT0;
   // rms = sqrtf(rms);
 }
 
@@ -299,14 +302,14 @@ void scale_data(int min, int max, unsigned short* pix, unsigned char* fb_proc)
   if (!delta) delta = 1;   // if max = min we have divide by zero
   int scale = 0x10000 / delta;
 
-  for (int y = 0; y < 120; ++y)
+  for (int y = 0; y < FRAME_HEIGHT0; ++y)
   {
-    for (int x = 0; x < 160; ++x)
+    for (int x = 0; x < FRAME_WIDTH0; ++x)
     {
-      int v = (pix[y * 160 + x] - min) * scale >> 8;
+      int v = (pix[y * FRAME_WIDTH0 + x] - min) * scale >> 8;
 
       // fb_proc is the gray scale frame buffer
-      fb_proc[y * 160 + x] = v;   // unsigned char!!
+      fb_proc[y * FRAME_WIDTH0 + x] = v;   // unsigned char!!
 
     }
   }
@@ -324,7 +327,8 @@ void overlays_write(int min, int max, int maxx, int maxy, unsigned short* pix, u
   strftime (st1, 60, "%H:%M:%S", loctime);
    
   // calc medium of 2x2 center pixels
-  int med = (pix[59 * 160 + 79] + pix[59 * 160 + 80] + pix[60 * 160 + 79] + pix[60 * 160 + 80]) / 4;
+  int med = (pix[(FRAME_HALF_HEIGHT0 - 1) * FRAME_WIDTH0 + FRAME_HALF_WIDTH0 - 1] + pix[(FRAME_HALF_HEIGHT0 - 1) * FRAME_WIDTH0 + FRAME_HALF_WIDTH0] + 
+             pix[FRAME_HALF_HEIGHT0       * FRAME_WIDTH0 + FRAME_HALF_WIDTH0 - 1] + pix[FRAME_HALF_HEIGHT0       * FRAME_WIDTH0 + FRAME_HALF_WIDTH0]) / 4;
   sprintf(st2," %.1f/%.1f/%.1f'C", raw2temperature(min), raw2temperature(med), raw2temperature(max));
   strcat(st1, st2);
   
@@ -332,36 +336,36 @@ void overlays_write(int min, int max, int maxx, int maxy, unsigned short* pix, u
   strncpy(st2, st1, MAX);
   // write zero to string !! 
   st2[MAX-1] = '\0';
-  font_write(fb_proc, 1, 120, st2);
+  font_write(fb_proc, 1, FRAME_HEIGHT0, st2);
 
   // show crosshairs, remove if required 
-  font_write(fb_proc, 80 - 2, 60 - 3, "+");
+  font_write(fb_proc, FRAME_HALF_WIDTH0 - 2, FRAME_HALF_HEIGHT0 - 3, "+");
 
   maxx -= 4;
   maxy -= 4;
 
   if (maxx < 0) maxx = 0; 
   if (maxy < 0) maxy = 0;
-  if (maxx > 150) maxx = 150;
-  if (maxy > 110) maxy = 110;
+  if (maxx > 150) maxx = FRAME_WIDTH0 - 10;
+  if (maxy > 110) maxy = FRAME_HEIGHT0 - 10;
 
-  font_write(fb_proc, 160-6, maxy, "<");
-  font_write(fb_proc, maxx, 120 - 8, "|");
+  font_write(fb_proc, FRAME_WIDTH2 - 6, maxy, "<");
+  font_write(fb_proc, maxx, FRAME_HEIGHT0 - 8, "|");
 }
 
 void palette_apply(unsigned char *colormap, unsigned char* fb_proc, unsigned char* fb_proc2)
 {
-  for (int y = 0; y < 128; ++y) 
+  for (int y = 0; y < FRAME_HEIGHT2; ++y) 
   {
-    for (int x = 0; x < 160; ++x) 
+    for (int x = 0; x < FRAME_WIDTH2; ++x) 
     {  
       // fb_proc is the gray scale frame buffer
-      int v = fb_proc[y * 160 + x] ;   // unsigned char!!
+      int v = fb_proc[y * FRAME_WIDTH2 + x] ;
 
       // fb_proc2 is an 24bit RGB buffer
-      fb_proc2[3 * y * 160 + x * 3] = colormap[3 * v];             // unsigned char!!
-      fb_proc2[(3 * y * 160 + x * 3) + 1] = colormap[3 * v + 1];   // unsigned char!!
-      fb_proc2[(3 * y * 160 + x * 3) + 2] = colormap[3 * v + 2];   // unsigned char!!
+      fb_proc2[ 3 * y * FRAME_WIDTH2 + x * 3]      = colormap[3 * v]; 
+      fb_proc2[(3 * y * FRAME_WIDTH2 + x * 3) + 1] = colormap[3 * v + 1];
+      fb_proc2[(3 * y * FRAME_WIDTH2 + x * 3) + 2] = colormap[3 * v + 2];
     }
   }
 }
@@ -369,19 +373,19 @@ void palette_apply(unsigned char *colormap, unsigned char* fb_proc, unsigned cha
 void transfer_raw(int unsigned short* pix, unsigned char* fb_proc0)
 {
   // transfer 16 bit raw grayscale
-  for (int y = 0; y < 120; ++y)
+  for (int y = 0; y < FRAME_HEIGHT0; ++y)
   {
-    for (int x = 0; x < 160; ++x)
+    for (int x = 0; x < FRAME_WIDTH0; ++x)
     {
-      int v = pix[y * 160 + x];
+      int v = pix[y * FRAME_WIDTH0 + x];
 
       unsigned char r = 0;
       unsigned char g = (unsigned char) ((v >> 8) & 0xff);
       unsigned char b = (unsigned char) (v & 0xff);
 
-      fb_proc0[3 * y * 160 + x * 3]       = r;
-      fb_proc0[(3 * y * 160 + x * 3) + 1] = g;
-      fb_proc0[(3 * y * 160 + x * 3) + 2] = b;
+      fb_proc0[ 3 * y * FRAME_WIDTH0 + x * 3]       = r;
+      fb_proc0[(3 * y * FRAME_WIDTH0 + x * 3) + 1] = g;
+      fb_proc0[(3 * y * FRAME_WIDTH0 + x * 3) + 2] = b;
     }
   }
 }
@@ -454,7 +458,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   
   buf85pointer = 0;
   
-  unsigned short pix[160 * 120];   // original Flir 16 Bit RAW
+  unsigned short pix[FRAME_WIDTH0 * FRAME_HEIGHT0];   // original Flir 16 Bit RAW
   int min, max, maxx, maxy;
   float rms = 0;
   buffer_reshape(&pix[0]);
@@ -462,11 +466,10 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
 
   unsigned char *fb_proc0, *fb_proc, *fb_proc2;
 
-  fb_proc0 = malloc(160 * 120 * 3);   // 8x8x8 bit RGB buffer for RAW data thermal image
-  fb_proc = malloc(160 * 128);        // 8 Bit gray buffer really needs only 160 x 120
-  fb_proc2 = malloc(160 * 128 * 3);   // 8x8x8 bit RGB buffer
-
-  memset(fb_proc, 128, 160 * 128);    // sizeof(fb_proc) doesn't work, value depends from LUT
+  fb_proc0 = malloc(FRAME_WIDTH0 * FRAME_HEIGHT0 * 3);   // 8x8x8 bit RGB buffer for RAW data thermal image
+  fb_proc  = malloc(FRAME_WIDTH2 * FRAME_HEIGHT2);       // 8 Bit gray buffer
+  memset(fb_proc, 128, FRAME_WIDTH2 * FRAME_HEIGHT2);    // sizeof(fb_proc) doesn't work, value depends from LUT
+  fb_proc2 = malloc(FRAME_WIDTH2 * FRAME_HEIGHT2 * 3);   // 8x8x8 bit RGB buffer
   
   transfer_raw(&pix[0], &fb_proc0[0]);
   scale_data(min, max, pix, fb_proc);
@@ -484,7 +487,8 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
     if (FFC == 1)
     {
       FFC = 0; // drop first frame after FFC
-      // printf("FFC frame\n");
+      //printf("FFC frame\n");
+      
     }
     else
     {             
