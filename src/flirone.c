@@ -38,6 +38,10 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#define SWITCH_DEFAULT 0
+#define SWITCH_DONT_WAIT_DEVCE 1
+#define SWITCH_NO_OVERLAYS 2
+
 #define VIDEO_DEVICE0 "/dev/video1"  // gray scale thermal image
 #define FRAME_WIDTH0  160
 #define FRAME_HEIGHT0 120
@@ -382,7 +386,7 @@ void transfer_raw(int unsigned short* pix, unsigned char* fb_proc0)
   }
 }
 
-void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[], unsigned char *colormap) 
+void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char buf[], unsigned char *colormap, unsigned char switches) 
 {
   // error handler
   time_t now1;
@@ -470,8 +474,6 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   palette_apply(colormap, fb_proc, fb_proc2);
     
   //write video to v4l2loopback(s)
-//write(fdwr0, fb_proc, framesize0);  // gray scale Thermal Image
-  
   write(fdwr1, &buf85[28 + ThermalSize], JpgSize);  // jpg Visual Image
   if (strncmp (&buf85[28 + ThermalSize + JpgSize + 17], "FFC", 3) == 0)
   {
@@ -482,7 +484,7 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
     if (FFC == 1)
     {
       FFC = 0; // drop first frame after FFC
-      printf("FFC frame\n");
+      // printf("FFC frame\n");
     }
     else
     {             
@@ -550,21 +552,23 @@ void print_bulk_result(char ep[],char EP_error[], int r, int actual_length, unsi
   } 
 }
  
-int EPloop(unsigned char *colormap)
-{    
+int EPloop(unsigned char *colormap, unsigned short switches)
+{ 
+  static int is_error = FALSE; 
+
   int i, r = 1;
 
  	r = libusb_init(NULL);
  	if (r < 0)
   {
- 		fprintf(stderr, "failed to initialise libusb\n");
+ 		if (!is_error) fprintf(stderr, "failed to initialise libusb\n");
  		exit(1);
  	}
  	
   r = find_lvr_flirusb();
  	if (r < 0) 
   {
- 		fprintf(stderr, "Could not find/open device\n");
+ 		if (!is_error) fprintf(stderr, "Could not find/open device\n");
  		goto out;
  	}
  	printf("Successfully find the Flir One G2 device\n");
@@ -573,7 +577,7 @@ int EPloop(unsigned char *colormap)
   r = libusb_set_configuration(devh, 3);
   if (r < 0)
   {
-      fprintf(stderr, "libusb_set_configuration error %d\n", r);
+      if (!is_error) fprintf(stderr, "libusb_set_configuration error %d\n", r);
       goto out;
   }
   printf("Successfully set usb configuration 3\n");
@@ -584,26 +588,27 @@ int EPloop(unsigned char *colormap)
  	r = libusb_claim_interface(devh, 0);
  	if (r < 0) 
   {
- 		fprintf(stderr, "libusb_claim_interface 0 error %d\n", r);
+ 		if (!is_error) fprintf(stderr, "libusb_claim_interface 0 error %d\n", r);
  		goto out;
  	}	
 
  	r = libusb_claim_interface(devh, 1);
  	if (r < 0) 
   {
- 		fprintf(stderr, "libusb_claim_interface 1 error %d\n", r);
+ 		if (!is_error) fprintf(stderr, "libusb_claim_interface 1 error %d\n", r);
  		goto out;
  	}
 
  	r = libusb_claim_interface(devh, 2);
  	if (r < 0)
   {
- 		fprintf(stderr, "libusb_claim_interface 2 error %d\n", r);
+ 		if (!is_error) fprintf(stderr, "libusb_claim_interface 2 error %d\n", r);
  		goto out;
  	}
 
+  is_error = FALSE;
+
  	printf("Successfully claimed interface 0,1,2\n");
-	
  	
 	unsigned char buf[1048576]; 
   int actual_length;
@@ -782,7 +787,7 @@ int EPloop(unsigned char *colormap)
           r = libusb_bulk_transfer(devh, 0x85, buf, sizeof(buf), &actual_length, 100); 
           if (actual_length > 0)
           {
-            vframe("0x85", EP85_error, r, actual_length, buf, colormap);
+            vframe("0x85", EP85_error, r, actual_length, buf, colormap, switches);
           }
   
           break;      
@@ -852,6 +857,15 @@ int EPloop(unsigned char *colormap)
  	libusb_release_interface(devh, 0);
  	
   out:
+
+    if (!is_error && !(switches & SWITCH_DONT_WAIT_DEVCE))
+    {
+      fprintf(stderr, "Waiting for device...\n");
+    }
+
+    is_error = TRUE;
+    
+
   //close the device
   
   if (devh != NULL)
@@ -860,6 +874,12 @@ int EPloop(unsigned char *colormap)
   }
   libusb_close(devh);
  	libusb_exit(NULL);
+
+  if (switches & SWITCH_DONT_WAIT_DEVCE) 
+  {
+    exit(1);
+  }
+
  	return r >= 0 ? r : -r;
 }
 
@@ -900,13 +920,13 @@ unsigned short parse_args(int argc, char **argv)
     for(int i=1; i<argc; i++)
     {
       // switches
-      if (strncmp(argv[i], "--waitdevice", 13) == 0)
+      if (strncmp(argv[i], "--dontwaitdevice", 17) == 0)
       {
-        switches |= 0x01;
+        switches |= SWITCH_DONT_WAIT_DEVCE;
       }
       else if (strncmp(argv[i], "--nooverlays", 13) == 0)
       {
-        switches |= 0x02;
+        switches |= SWITCH_NO_OVERLAYS;
       }
       else if (strncmp(argv[i], switch_prefix, strlen(switch_prefix)) == 0)
       {
@@ -953,7 +973,7 @@ int main(int argc, char **argv)
    
   while (1)
   {
-    EPloop(colormap);
+    EPloop(colormap, switches);
   }
   
 } 
