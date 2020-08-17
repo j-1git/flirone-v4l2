@@ -346,16 +346,16 @@ void overlays_write(int min, int max, int maxx, int maxy, unsigned short* pix, u
 
   if (maxx < 0) maxx = 0; 
   if (maxy < 0) maxy = 0;
-  if (maxx > 150) maxx = FRAME_WIDTH0 - 10;
-  if (maxy > 110) maxy = FRAME_HEIGHT0 - 10;
+  if (maxx > FRAME_WIDTH0  - 10) maxx = FRAME_WIDTH0  - 10;
+  if (maxy > FRAME_HEIGHT0 - 10) maxy = FRAME_HEIGHT0 - 10;
 
   font_write(fb_proc, FRAME_WIDTH2 - 6, maxy, "<");
   font_write(fb_proc, maxx, FRAME_HEIGHT0 - 8, "|");
 }
 
-void palette_apply(unsigned char *colormap, unsigned char* fb_proc, unsigned char* fb_proc2)
+void palette_apply(unsigned char *colormap, int frame_height, unsigned char* fb_proc, unsigned char* fb_proc2)
 {
-  for (int y = 0; y < FRAME_HEIGHT2; ++y) 
+  for (int y = 0; y < frame_height; ++y) 
   {
     for (int x = 0; x < FRAME_WIDTH2; ++x) 
     {  
@@ -467,14 +467,25 @@ void vframe(char ep[],char EP_error[], int r, int actual_length, unsigned char b
   unsigned char *fb_proc0, *fb_proc, *fb_proc2;
 
   fb_proc0 = malloc(FRAME_WIDTH0 * FRAME_HEIGHT0 * 3);   // 8x8x8 bit RGB buffer for RAW data thermal image
-  fb_proc  = malloc(FRAME_WIDTH2 * FRAME_HEIGHT2);       // 8 Bit gray buffer
-  memset(fb_proc, 128, FRAME_WIDTH2 * FRAME_HEIGHT2);    // sizeof(fb_proc) doesn't work, value depends from LUT
-  fb_proc2 = malloc(FRAME_WIDTH2 * FRAME_HEIGHT2 * 3);   // 8x8x8 bit RGB buffer
+
+  int frame_height;
+  if (switches & SWITCH_NO_OVERLAYS)
+  {
+    frame_height = FRAME_HEIGHT0;
+  }
+  else
+  {
+    frame_height = FRAME_HEIGHT2;
+  }
+  
+  fb_proc  = malloc(FRAME_WIDTH2 * frame_height);       // 8 Bit gray buffer
+  memset(fb_proc, 128, FRAME_WIDTH2 * frame_height);    // sizeof(fb_proc) doesn't work, value depends from LUT
+  fb_proc2 = malloc(FRAME_WIDTH2 * frame_height * 3);   // 8x8x8 bit RGB buffer
   
   transfer_raw(&pix[0], &fb_proc0[0]);
   scale_data(min, max, pix, fb_proc);
-  overlays_write(min, max, maxx, maxy, &pix[0], &fb_proc[0]);
-  palette_apply(colormap, fb_proc, fb_proc2);
+  if (!(switches & SWITCH_NO_OVERLAYS)) overlays_write(min, max, maxx, maxy, &pix[0], &fb_proc[0]);
+  palette_apply(colormap, frame_height, fb_proc, fb_proc2);
     
   //write video to v4l2loopback(s)
   write(fdwr1, &buf85[28 + ThermalSize], JpgSize);  // jpg Visual Image
