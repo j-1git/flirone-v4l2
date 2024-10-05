@@ -51,15 +51,13 @@ Dependency needed to use this program:
 
 * the kernel module https://github.com/afgranero/v4l2loopback (forked from  https://github.com/umlaeute/v4l2loopback).
 
-
 ## How to compile
 
-Once you have the dependencies set up, you cam compile by using the command:
+Once you have the dependencies set up, you can compile by using the command:
 
 ```
 make all
 ```
-
 
 ## How to run
 
