@@ -14,20 +14,20 @@ This version has several differences from the original:
 
 * a raw stream of the image thermal data with all his 16 bit (65535 levels) encoded as a RBG stream (with B channel as the MSB and the G channel as the LSB), for image processing purposes.
 
-* a slightly bertter error treatment:
-  * it does not gives you segmentation fault if the device is not ready, connected of turned on. Now the program waits for the device (or optionally exits with a clear error message).
-  * it does not gives you segmentation fault if the `v4lloopback` is not installled, but a more clear error message;
-  * if the cpalette file is inexistent or inacessible you don't get a segmentation fault anymore.
+* a slightly better error treatment:
+  * it does not gives you segmentation fault if the device is not ready, connected or turned on. Now the program waits for the device (or optionally exits with a clear error message).
+  * it does not gives you segmentation fault if the `v4lloopback` is not installed, but a more clear error message;
+  * if the cpalette file is inexistent or inaccessible you don't get a segmentation fault anymore.
 
 * it has command line options for:
   * turn off the crosshairs, and temperature at the bottom of image;
   * turn off the waiting for the device, exiting with an error.
 
 * the code was made more clear:
-  * the ode was put on a more consistent and clear formatting standard;
+  * the code was put on a more consistent and clear formatting standard;
   * each action was separated in smaller functions;
   * some of of those actions were rewrote to have single responsibilities, so the name of the function is not misleading;
-  * the hardcoded sizes of the image were substitued by constants.
+  * the hard coded sizes of the image were substituted by constants.
 
 ## What it does
 
@@ -37,7 +37,7 @@ It produces three video streams:
 
 * `/dev/video1`: the raw thermal image stream encoded as a RGB image with the 16 bit gray scale encoded in B (MSB) and G (LSB) bytes;
 * `/dev/video2`: the visible camera;
-* `/dev/video3`: the thermal image with the thermal values rescaled to 8 bit gray scaleand colored with a 256 colors palette
+* `/dev/video3`: the thermal image with the thermal values rescaled to 8 bit gray scaled and colored with a 256 colors palette
 
 ## Dependencies
 
@@ -87,22 +87,22 @@ The file `Iron2.raw` is a palette file that specifies the color palette to be us
 
 #### Command line switches
 
-This version has a few more options than the original.S
+This version has a few more options than the original.
 The syntax is
 
 ```
 flirone [--dontwaitdevice] [--nooverlays] palettefile.raw
 ```
 
-`--dontwaitdevice` turns off the default behavior of waiting for the device to be connected turned on and ready, even if the device is disconnected or turned off during streaming. Instead it exits immediatly with an error.
+`--dontwaitdevice` turns off the default behavior of waiting for the device to be connected turned on and ready, even if the device is disconnected or turned off during streaming. Instead it exits immediately with an error.
 
-`--nooverlays` turns off the image overlays of the colored image on `/de/video3`: the crosshairs and the temperature bar athe bottom of the image (reduces the image 8 pixels in height used for that bar).
+`--nooverlays` turns off the image overlays of the colored image on `/dev/video3`: the cross-hairs and the temperature bar at the bottom of the image (reduces the image 8 pixels in height used for that bar).
 
 ## How to see and use the video streams
 
 With this module you will can use it for instance:
 
-* with VLC onneted to one of the capture devices: `/dev/video1`, `/dev/video2` and `/dev/video3` described above;
+* with VLC connected to one of the capture devices: `/dev/video1`, `/dev/video2` and `/dev/video3` described above;
 * with Python using OpenCV, as described in this example: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html just changing the device index.
 
 ## Some working details
@@ -119,23 +119,23 @@ Those colors are not absolute, as the image levels are dynamically rescaled as e
 The raw thermal on `/dev/video1` has 16 bits (65536 gray levels) encoded on a RGB video stream with B as the MSB and G as the LSB.
 This stream is useful for video processing the raw image. 
 
-A typical scene don't span the whole rabge of temperatures that can de measured with the FLIR ONE PRO (-20°C to 400°C). For instance a tipical room image with electrical equipment has about 1.5% this range (about 1000 levels wide), and a typical face image 0.6% to 0.7% this range (about 400 to 500 levels wide).
+A typical scene don't span the whole range of temperatures that can be measured with the FLIR ONE PRO (-20°C to 400°C). For instance a typical room image with electrical equipment has about 1.5% this range (about 1000 levels wide), and a typical face image 0.6% to 0.7% this range (about 400 to 500 levels wide).
 
-With such a narrow range a raw image even color coded the fine details of thermal variation can not be percieved by human eye.
+With such a narrow range a raw image even color coded the fine details of thermal variation can not be perceived by human eye.
 
-For visualizing purposes the image stream on `/dev/video3` is dynamically rescaled at each frame, allowing to see slight temperatre differences on image.
+For visualizing purposes the image stream on `/dev/video3` is dynamically rescaled at each frame, allowing to see slight temperature differences on image.
 
-At each frame the lower level is the minimal termperature found on image, and the higher one the maximum temperature found. This range is rescaled to 8 but (256 levels) encoded to colors according the palette chosen.
+At each frame the lower level is the minimal temperature found on image, and the higher one the maximum temperature found. This range is rescaled to 8 but (256 levels) encoded to colors according the palette chosen.
 
-This enables a good visualization of the thermal image, but turns it useless for image processing (at least without a temperature reference spot on the image) as the levels ar relative to the scene and not absolute (that is why we provided the) raw thermal stream on `/dev/video1`.
+This enables a good visualization of the thermal image, but turns it useless for image processing (at least without a temperature reference spot on the image) as the levels are relative to the scene and not absolute (that is why we provided the) raw thermal stream on `/dev/video1`.
 
 ## Image overlays
 
 The image stream on `/dev/video3` have some features overlayed to the image:
 * a center image indicator for indicating the spot where temperature indicated on the status bar is being measured
 * a temperature status bar indicating:
-  * the mimimum temperature found on image;
-  * the temperature at the cernter image indicator (taken as an average of four pixels around the center);
+  * the minimum temperature found on image;
+  * the temperature at the center image indicator (taken as an average of four pixels around the center);
   * the maximum temperature found on image
 * a pair of crosshairs on vertical `|` and other horizontal `<` to indicate the hottest point on the image.
 
@@ -146,8 +146,8 @@ Those overlays can be turned off by using the command line switch `--nooverlays`
 The FLIR ONE Pro has an automatic calibration.
 When the scene has big variations of temperature a FFC calibration may occur.
 
-When this happens the shutter closes and some frames labelled as FFC (for flat field correction) are sent. This makes the image to be interrupted for about 1 to 2 seconds.
+When this happens the shutter closes and some frames labeled as FFC (for flat field correction) are sent. This makes the image to be interrupted for about 1 to 2 seconds.
 
-This process is more acurratelly described as dark field correction than flat field correction.
+This process is more accurately described as dark field correction than flat field correction.
 
 Those frames are eliminated from the stream, but they can be in the future used to correct the different of sensitivity for each pixel of the sensor issue #20). 
